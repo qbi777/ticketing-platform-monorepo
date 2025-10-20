@@ -12,7 +12,7 @@ A full-stack event ticketing platform with dynamic pricing. Ticket prices automa
 **Required:**
 
 - Monorepo: Turborepo (already configured)
-- Frontend: Next.js 14 with App Router (starter provided)
+- Frontend: Next.js 15 with App Router (starter provided)
 - Backend: NestJS or Express (your choice)
 - Database: PostgreSQL with Drizzle ORM
 - Language: TypeScript strict mode
