@@ -1,6 +1,6 @@
 # Assignment Requirements
 
-- Duration: 10 days from receipt
+- Duration: 7 days from receipt
 - Stack: Next.js 15, NestJS/ExpressJS, Turborepo, Drizzle ORM, PostgreSQL
 
 ## What You're Building
