@@ -1,6 +1,17 @@
 {
   "name": "ticketing-platform-monorepo",
+  "description": "Dynamic event ticketing platform with intelligent pricing - Assignment starter",
   "private": true,
+  "license": "MIT",
+  "author": {
+    "name": "Minsky Digital Labs",
+    "email": "reneeth@minsky.in",
+    "url": "https://minsky.in"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-org/ticketing-platform-monorepo"
+  },
   "scripts": {
     "build": "turbo run build",
     "dev": "turbo run dev",

@@ -1,135 +1,255 @@
-# Turborepo starter
+# Assignment Requirements
 
-This Turborepo starter is maintained by the Turborepo core team.
+- Duration: 10 days from receipt
+- Stack: Next.js 15, NestJS/ExpressJS, Turborepo, Drizzle ORM, PostgreSQL
 
-## Using this example
+## What You're Building
 
-Run the following command:
+A full-stack event ticketing platform with dynamic pricing. Ticket prices automatically adjust based on time until event, booking velocity, and remaining inventory.
 
-```sh
-npx create-turbo@latest
+## Technical Stack
+
+**Required:**
+
+- Monorepo: Turborepo (already configured)
+- Frontend: Next.js 14 with App Router (starter provided)
+- Backend: NestJS or Express (your choice)
+- Database: PostgreSQL with Drizzle ORM
+- Language: TypeScript strict mode
+
+**Optional (bonus points):**
+
+- Redis for caching
+- Docker Compose for easy local setup
+
+## Core Requirements
+
+**1. Database Schema**
+
+Design and implement schema for events and bookings.
+
+**Event must include:**
+
+- Basic info: name, date, venue, description
+- Capacity: total tickets, booked tickets
+- Pricing: base price, current price, floor, ceiling
+- Pricing rules configuration (stored as JSON)
+
+**Booking must include:**
+
+- Reference to event
+- User email
+- Quantity
+- Price paid (snapshot at booking time)
+- Booking timestamp
+
+The database package is set up with Drizzle. You need to:
+
+- Create `src/schema.ts` with your table definitions
+- Create `src/index.ts` to export the database client
+- Create `src/seed.ts` to populate sample data
+
+**2. Dynamic Pricing Engine**
+
+This is the core challenge. Implement logic that calculates ticket price based on three rules:
+
+**Time-Based Rule**
+
+Price increases as event date approaches.
+
+Example: Base price for events 30+ days out, +20% for events within 7 days, +50% for events tomorrow.
+
+**Demand-Based Rule**
+
+Price increases when booking velocity is high.
+
+Example: If more than 10 bookings happened in the last hour, increase price by 15%.
+
+**Inventory-Based Rule**
+
+Price increases as tickets sell out.
+
+Example: When less than 20% of tickets remain, increase price by 25%.
+
+**Implementation requirements:**
+
+- Each rule has a configurable weight (via environment variables)
+- Rules combine to produce final price
+- Price must respect floor (minimum) and ceiling (maximum)
+- Price calculation must be deterministic and testable
+- Formula: currentPrice = basePrice × (1 + sum of weighted adjustments)
+
+**3. API Endpoints**
+
+Build a REST API with these endpoints:
+
+**Events**
+
+- `GET /events` - List all events with current price and availability
+- `GET /events/:id` - Get single event details with price breakdown
+- `POST /events` - Create new event (simple auth is fine)
+
+**Bookings**
+
+- `POST /bookings` - Book tickets (body: eventId, userEmail, quantity)
+- `GET /bookings?eventId=:id` - List bookings for an event
+
+**Analytics**
+
+- `GET /analytics/events/:id` - Get metrics for an event (total sold, revenue, average price, remaining)
+- `GET /analytics/summary` - System-wide metrics
+
+**Development**
+
+- `POST /seed` - Seed database with sample events
+
+**4. Concurrency Control**
+
+**Critical requirement:** Prevent overselling when multiple users book simultaneously.
+When only 1 ticket remains and 2 users try to book at the same time:
+
+- Only 1 booking should succeed
+- The other should receive a clear error
+- No tickets should be oversold
+
+You must:
+
+- Implement proper transaction handling with row-level locking
+- Write an automated test that proves this works
+
+Example test structure:
+
+```ts
+typescriptdescribe("Concurrent Bookings", () => {
+  it("prevents overbooking of last ticket", async () => {
+    // Setup: Create event with 1 ticket remaining
+    // Execute: Make 2 simultaneous booking requests
+    // Assert: Exactly 1 succeeds, 1 fails with proper error
+  });
+});
 ```
 
-## What's inside?
+**5. Frontend Pages**
 
-This Turborepo includes the following packages/apps:
+Build these pages using Next.js App Router:
 
-### Apps and Packages
+**Event List (`/events`)**
 
-- `docs`: a [Next.js](https://nextjs.org/) app
-- `web`: another [Next.js](https://nextjs.org/) app
-- `@repo/ui`: a stub React component library shared by both `web` and `docs` applications
-- `@repo/eslint-config`: `eslint` configurations (includes `eslint-config-next` and `eslint-config-prettier`)
-- `@repo/typescript-config`: `tsconfig.json`s used throughout the monorepo
+- Display all upcoming events
+- Show name, date, venue, current price, tickets remaining
+- Click event to view details
 
-Each package/app is 100% [TypeScript](https://www.typescriptlang.org/).
+**Event Detail (`/events/[id]`)**
 
-### Utilities
+- Full event information
+- Price breakdown showing base price and adjustments from each rule
+- Booking form with quantity selector
+- Real-time price updates (polling every 30 seconds is fine)
 
-This Turborepo has some additional tools already setup for you:
+**Booking Confirmation (`/bookings/success`)**
 
-- [TypeScript](https://www.typescriptlang.org/) for static type checking
-- [ESLint](https://eslint.org/) for code linting
-- [Prettier](https://prettier.io) for code formatting
+- Show booking details after successful purchase
+- Display price paid vs current price
 
-### Build
+**User Bookings (`/my-bookings`)**
 
-To build all apps and packages, run the following command:
+- List user's bookings
+- Show event name, tickets, price paid
+- Compare price paid to current price
 
-```
-cd my-turborepo
+**Technical requirements:**
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build
+- Use Server Components where appropriate
+- Handle form submission with Server Actions
+- Show loading states and error messages
+- Responsive design
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build
-yarn dlx turbo build
-pnpm exec turbo build
-```
+**Testing Requirements**
 
-You can build a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+**You must include:**
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo build --filter=docs
+1. Unit tests for pricing calculation logic
+   - Test each rule independently
+   - Test combined rules
+   - Test floor/ceiling constraints
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo build --filter=docs
-yarn exec turbo build --filter=docs
-pnpm exec turbo build --filter=docs
-```
+2. Integration tests for booking flow
 
-### Develop
+- Complete flow from price calculation to booking confirmation
 
-To develop all apps and packages, run the following command:
+3. Concurrency test (mandatory)
 
-```
-cd my-turborepo
+- Automated test proving your solution prevents overbooking
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev
+Minimum 70% coverage for pricing logic.
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev
-yarn exec turbo dev
-pnpm exec turbo dev
-```
+**Deliverables**
 
-You can develop a specific package by using a [filter](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters):
+**1. GitHub Repository**
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo dev --filter=web
+Include:
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo dev --filter=web
-yarn exec turbo dev --filter=web
-pnpm exec turbo dev --filter=web
-```
+- All source code
+- README.md with setup instructions
+- DESIGN.md explaining your approach
+- .env.example files
+- Working seed script
 
-### Remote Caching
+**2. README.md**
 
-> [!TIP]
-> Vercel Remote Cache is free for all plans. Get started today at [vercel.com](https://vercel.com/signup?/signup?utm_source=remote-cache-sdk&utm_campaign=free_remote_cache).
+Must contain:
 
-Turborepo can use a technique known as [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching) to share cache artifacts across machines, enabling you to share build caches with your team and CI/CD pipelines.
+- Prerequisites (Node version, database, etc)
+- Installation steps (should work in under 5 commands)
+- How to run the application
+- How to run tests
+- Environment variables documentation
 
-By default, Turborepo will cache locally. To enable Remote Caching you will need an account with Vercel. If you don't have an account you can [create one](https://vercel.com/signup?utm_source=turborepo-examples), then enter the following commands:
+**3. DESIGN.md**
 
-```
-cd my-turborepo
+Write 300-500 words explaining:
 
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo login
+- Your pricing algorithm implementation and design choices
+- How you solved the concurrency problem
+- Monorepo architecture decisions
+- Trade-offs you made
+- What you would improve with more time
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo login
-yarn exec turbo login
-pnpm exec turbo login
-```
+**4. Working Application**
 
-This will authenticate the Turborepo CLI with your [Vercel account](https://vercel.com/docs/concepts/personal-accounts/overview).
+We should be able to:
 
-Next, you can link your Turborepo to your Remote Cache by running the following command from the root of your Turborepo:
+- Clone your repo
+- Run setup commands
+- Seed the database
+- Access the working application
+- Run your tests and see them pass
 
-```
-# With [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation) installed (recommended)
-turbo link
+## What's NOT Required
 
-# Without [global `turbo`](https://turborepo.com/docs/getting-started/installation#global-installation), use your package manager
-npx turbo link
-yarn exec turbo link
-pnpm exec turbo link
-```
+To keep the scope reasonable for 7 days, you do **not** need to implement:
 
-## Useful Links
+**Payment Processing**
 
-Learn more about the power of Turborepo:
+- No Stripe/PayPal integration needed
+- No actual payment gateway
+- When a booking is created, just record the price - assume payment happened
 
-- [Tasks](https://turborepo.com/docs/crafting-your-repository/running-tasks)
-- [Caching](https://turborepo.com/docs/crafting-your-repository/caching)
-- [Remote Caching](https://turborepo.com/docs/core-concepts/remote-caching)
-- [Filtering](https://turborepo.com/docs/crafting-your-repository/running-tasks#using-filters)
-- [Configuration Options](https://turborepo.com/docs/reference/configuration)
-- [CLI Usage](https://turborepo.com/docs/reference/command-line-reference)
+**Authentication System**
+
+- No user registration/login required
+- For the booking flow, just ask for email address
+- Simple admin authentication (hardcoded API key is fine) for creating events
+
+**Email Notifications**
+
+- No need to send booking confirmations
+- No email service integration
+
+**Advanced Features**
+
+- No refunds or cancellation flow
+- No QR codes or ticket PDFs
+- No seat selection or ticket tiers
+
+Focus on the core challenges: dynamic pricing algorithm and concurrency control. Everything else should be kept minimal.
