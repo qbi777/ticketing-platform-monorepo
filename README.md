@@ -3,6 +3,8 @@
 - Duration: 7 days from receipt
 - Stack: Next.js 15, NestJS/ExpressJS, Turborepo, Drizzle ORM, PostgreSQL
 
+**NOTE:** You are free to fork this repository, complete the assignment in your own fork, and **retain full ownership of your code**. Please just add me as a collaborator during the evaluation process so I can review your submission.
+
 ## What You're Building
 
 A full-stack event ticketing platform with dynamic pricing. Ticket prices automatically adjust based on time until event, booking velocity, and remaining inventory.
